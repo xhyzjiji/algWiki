@@ -184,7 +184,7 @@ $$
 
 ![Raft-Log2](/Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/分布式协调/pics/Raft-Log2.png)
 
-当Leader A发生故障，B、C、D、E节点选举，因为最大已提交日志在「Term=3, LogIndex=6」，所以，节点D、E是不可能获得节点B、C的选票的。
+当Leader A发生故障，B、C、D、E节点选举，因为最大已提交日志在「Term=3, LogIndex=6」，所以，节点D、E是不可能获得节点B、C的选票的，因此节点D、E选票就不可能过半。
 
 节点C当选的可能投票情况：
 
