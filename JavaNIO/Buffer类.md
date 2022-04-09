@@ -1,24 +1,22 @@
 ## 1.Buffer类指针
 
 * Capacity
-
+  
   Buffer容量，Buffer对象创建后，值不可被修改
 
 * Position
-
+  
   Buffer可读写下一个字节的索引位置，初始值为0
 
 * Limit
-
+  
   Buffer第一个不可读写的索引位置，初始值等于Capacity（limit处索引是不可读写的）
 
 * Mark
-
+  
   标记Position位置，方便重置Position索引值
 
 Buffer索引值从0开始计算
-
-
 
 ## 2.Buffer操作公式
 
@@ -39,23 +37,19 @@ Buffer索引值从0开始计算
 15. mark()：mark=position
 16. reset()：position=mark
 
-
-
 ## 3.视图Buffer
 
 * duplicate()
-
+  
   srcBuffer指针变量的完全拷贝
 
 * asReadOnlyBuffer()
-
+  
   视图Buffer，禁止put操作，其他指针类似duplicate
 
 * slice()
-
+  
   视图Buffer中，position=0，limit=srcBuffer.remaining()，capacity=srcBuffer.remaining()
-
-
 
 ## 4.DirectBuffer（直接缓存区）
 

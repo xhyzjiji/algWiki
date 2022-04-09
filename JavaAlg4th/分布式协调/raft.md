@@ -5,32 +5,29 @@
 Paxos 在 Raft 算法出现前，一直作为共识算法的代表。Raft 设计者给出了两个 Paxos 的主要缺点：
 
 1. Paxos 算法难以理解，也很难实现（<font color='red'>对称共识算法</font>）。
-
+   
    一个Paxos拥有3中角色，proposer、acceptor、learner
-
+   
    proposer：负责发起提议；acceptor：与所有proposer一起选举一个提议；learner：学习已通过的提议；
-
+   
    我们可以体验一下Basic Paxos的一次协调流程：
-
+   
    1. Proposer 提出提案，广播prepare请求到所有Acceptor；
    2. Acceptor 回复收到的最大proposal提议id；
    3. Proposer 根据多数（过半）的Acceptor回复的提议，发送给所有Acceptor最终提议；
    4. 在多数（过半）Acceptor响应提议后，Proposer形成<font color='red'>决议</font>，并广播到所有Learner；
-
-   整个写入主要有两个阶段：（1）prepare 选主提议（步骤1~3）（2）提议 commit（步骤3~4）；两次的quorum选举，期间出现延时、分区、节点宕机等等情况下，Paxos在故障恢复后需要先解决日志冲突，因为故障恢复的必要性，给整个算法的复杂度和限制条件是很难把控的。
-
-   整个流程需要两次quorum选举，效率肯定会比较低下，所以就出现了Multi-Paxos算法（这个不是很了解，后面看了再补充）
-
-   Paxos 也有很多变种算法，针对不同场景的优化：
-
-   Disk Paxos(2002); Cheap Paxos(2003); Fast Paxos(2004); Generalized Paxos(2005); Stoppable Paxos(2008); Vertical Paxos(2009)
-
-   具体的实现也有很多：
-
-   Google Chubby；Google Spanner；Ceph；Neo4j；Amazon Elastic Container Service
-
    
-
+   整个写入主要有两个阶段：（1）prepare 选主提议（步骤1~3）（2）提议 commit（步骤3~4）；两次的quorum选举，期间出现延时、分区、节点宕机等等情况下，Paxos在故障恢复后需要先解决日志冲突，因为故障恢复的必要性，给整个算法的复杂度和限制条件是很难把控的。
+   
+   整个流程需要两次quorum选举，效率肯定会比较低下，所以就出现了Multi-Paxos算法（这个不是很了解，后面看了再补充）
+   
+   Paxos 也有很多变种算法，针对不同场景的优化：
+   
+   Disk Paxos(2002); Cheap Paxos(2003); Fast Paxos(2004); Generalized Paxos(2005); Stoppable Paxos(2008); Vertical Paxos(2009)
+   
+   具体的实现也有很多：
+   
+   Google Chubby；Google Spanner；Ceph；Neo4j；Amazon Elastic Container Service
 * Raft 工作原理（<font color='red'>非对称共识算法</font>）
 
 Raft 是一个基于”日志复制同步“来实现的一种共识算法。
@@ -48,8 +45,6 @@ Raft 算法比 Paxos 容易理解的主要原因，在于Raft 算法工作流程
 <center>选主（Leader Election），日志复制（Log replication），安全性，集群节点变化（Membership Changes）</center>
 
 下面就 Raft 切分的各个流程进行介绍。
-
-
 
 # 2. Raft 选主
 
@@ -74,15 +69,15 @@ Raft 集群节点跟 Paxos 类似，分为3个角色：Leader、Candidate、Foll
 全序：每一个事件都可以按一定逻辑进行全局定序，比如：节点间按 IP 有确定的优先级，加上节点本地时间存着因果关系，所以一个事件就可以在全局进行定序；也可以利用类似于Google的True Time，利用卫星时间+最大网络延时预估对每个事件进行一个时间发配，来表示事件的全局顺序。实现的例子有：Spanner的True Time，单Leader主从架构
 
 * *逻辑时钟*
-
+  
   不同节点之间，由于地理位置不同、时钟晶振漂移等问题，很难保证节点之间时钟的一致性，导致在不能节点上处理的事件，无法真实反映出真实世界中事件发生的顺序，这时候就出现了逻辑时钟，常见的逻辑时钟有：
-
+  
   （1）矢量时钟（Vector Clock)
-
+  
   （2）逻辑时钟（Lamport Timestamp）
 
 * *物理时钟*
-
+  
   （1）Spanner True Time
 
 Raft 的日志定序依据： Term + logIndex，我们先看下 Term 的概念。
@@ -119,21 +114,19 @@ Raft Term也可以算是逻辑时钟的一种，在一个Leader任期内，Term�
 
 （<font color='red'>举例网络隔离</font>)
 
-
-
 ## 2.3 Raft 如何防止Split Vote
 
 在一次选举期间，可能选票被平均到各个节点，使得所有Candidate角色得不到过半选票，只有等待选举超时，Candidate节点重新发起下一轮投票。
 
 比如，在5个节点情况下，
 
-|       | A    | B    | C    | D    | E    | 总票数 |
-| ----- | ---- | ---- | ---- | ---- | ---- | ------ |
-| 节点A | 投A  | 投B  | -    | -    | -    | 2      |
-| 节点B | -    | 投B  | 投C  | -    | -    | 2      |
-| 节点C | -    | -    | 投C  | 投D  | -    | 2      |
-| 节点D | -    | -    | -    | 投D  | 投E  | 2      |
-| 节点E | 投A  | -    | -    | -    | 投E  | 2      |
+|     | A   | B   | C   | D   | E   | 总票数 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 节点A | 投A  | 投B  | -   | -   | -   | 2   |
+| 节点B | -   | 投B  | 投C  | -   | -   | 2   |
+| 节点C | -   | -   | 投C  | 投D  | -   | 2   |
+| 节点D | -   | -   | -   | 投D  | 投E  | 2   |
+| 节点E | 投A  | -   | -   | -   | 投E  | 2   |
 
 所有节点都没过半，均需要等待选举超时后发起下一轮选举，本轮选举就被称为Split Vote。
 
@@ -148,8 +141,6 @@ $$
 
 其中 MTBF 是一个server从运行到故障的平均时间。
 
-
-
 # 3. 日志复制
 
 ## 3.1 日志结构
@@ -161,7 +152,7 @@ $$
 一个 LogEntry 由Term、LogIndex和数据组成，一个 Term + LogIndex 可以表示唯一一个LogEntry的位置。
 
 > If two entries in different logs have the same index and term, then they store the same command.
->
+> 
 > If two entries in different logs have the same index and term, then the logs are identical in all preceding entries.
 
 节点在接收到 AppendEntries 请求后，即将数据追加到日志文件中，以防止节点宕机导致数据丢失。（其实每次fsync会对性能有影响，有合并写的优化，这个后面补充）
@@ -188,23 +179,23 @@ $$
 
 节点C当选的可能投票情况：
 
-|               | A    | B    | C    | D    | E    | 总票数    |
-| ------------- | ---- | ---- | ---- | ---- | ---- | --------- |
-| 节点A（宕机） | -    | -    | -    | -    | -    | 0         |
-| 节点B         | -    | 投B  | 投C  | -    | -    | 2         |
-| 节点C         | -    | -    | 投C  | -    | -    | 3（过半） |
-| 节点D         | -    | -    | 投C  | 投D  | -    | 1         |
-| 节点E         | -    | 投B  | -    | -    | 投E  | 1         |
+|         | A   | B   | C   | D   | E   | 总票数   |
+| ------- | --- | --- | --- | --- | --- | ----- |
+| 节点A（宕机） | -   | -   | -   | -   | -   | 0     |
+| 节点B     | -   | 投B  | 投C  | -   | -   | 2     |
+| 节点C     | -   | -   | 投C  | -   | -   | 3（过半） |
+| 节点D     | -   | -   | 投C  | 投D  | -   | 1     |
+| 节点E     | -   | 投B  | -   | -   | 投E  | 1     |
 
 节点B当选的可能投票情况：（因为「Term=3, LogIndex={7,8}」的LogEntries不算已提交，所以节点B是有资格成为Leader的）
 
-|               | A    | B    | C    | D    | E    | 总票数    |
-| ------------- | ---- | ---- | ---- | ---- | ---- | --------- |
-| 节点A（宕机） | -    | -    | -    | -    | -    | 0         |
-| 节点B         | -    | 投B  | 投C  | -    | -    | 3（过半） |
-| 节点C         | -    | -    | 投C  | -    | -    | 2         |
-| 节点D         | -    | 投B  | -    | 投D  | -    | 1         |
-| 节点E         | -    | 投B  | -    | -    | 投E  | 1         |
+|         | A   | B   | C   | D   | E   | 总票数   |
+| ------- | --- | --- | --- | --- | --- | ----- |
+| 节点A（宕机） | -   | -   | -   | -   | -   | 0     |
+| 节点B     | -   | 投B  | 投C  | -   | -   | 3（过半） |
+| 节点C     | -   | -   | 投C  | -   | -   | 2     |
+| 节点D     | -   | 投B  | -   | 投D  | -   | 1     |
+| 节点E     | -   | 投B  | -   | -   | 投E  | 1     |
 
 ## 3.3 日志覆盖
 
@@ -215,14 +206,14 @@ $$
 日志不一致一般由以下原因造成：
 
 1. 网络延时。因为Leader广播日志追加请求，只需要等待过半数的节点返回，则可以认为日志已经提交，无需等待剩余节点的返回结果，所以有部分节点可能因负载或者延时，导致日志复制延时；
+
 2. 网络分区。当网络分区发生时，低于半数的子集群无法不可写入，则不再对外提供服务，那么就不会再产生新的”已提交“日志；多余半数的子集群则可能会重新选举，并在新的Term中继续提供服务；
-
 * 延时导致的日志不一致：
-
+  
   ![Raft-Log2](/Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/分布式协调/pics/Raft-Log2.png)
 
 * 网络分区导致的日志不一致：
-
+  
   ![Raft-Network-Partition-Log](/Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/分布式协调/pics/Raft-Network-Partition-Log.png)
 
 只要日志在客观上不是”已提交“，那么在新Term下，就有可能被覆盖。
@@ -276,8 +267,6 @@ Raft 论文中，根据这种比较方法，在Leader选举时，存在一种日
 
 <font color='red'>。。。待补充</font>
 
-
-
 # 4. 客户端设计
 
 * Client第一次访问Raft集群的可能流程：
@@ -288,7 +277,7 @@ Client读写请求都需要访问Leader，Client如果访问到Follower，Follow
 
 * 一次Client写入请求流程大致如下：（以实际实现为准）
 
-​				![Raft-Commit1](file:///Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83/pics/Raft-Commit1.png?lastModify=1594486303)				![Raft-Commit2](file:///Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83/pics/Raft-Commit2.png?lastModify=1594486303)
+​                ![Raft-Commit1](file:///Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83/pics/Raft-Commit1.png?lastModify=1594486303)                ![Raft-Commit2](file:///Users/panyongfeng/Documents/basic_framework/wiki/JavaAlg4th/%E5%88%86%E5%B8%83%E5%BC%8F%E5%8D%8F%E8%B0%83/pics/Raft-Commit2.png?lastModify=1594486303)
 
 <center>图 7 - 写入请求处理流程</center>
 
@@ -303,28 +292,24 @@ Client在发起写入后，可能会出现以下的情况：
 还有在这些情况下，Client读取到的最新数据会如何变化？如果发生二次宕机，Client的数据会不会有“重复读”的问题？
 
 * 日志复制过半节点
-
+  
   这个属于正常流程，因为读写需要经过Leader，所以正常情况下客户端能读到已提交的最新数据；
 
 * 日志复制过半节点，Leader在ack客户端前宕机，然后重新选举新Leader
-
+  
   Client认为写入失败，超时需要重新发送写入请求，且要求会话中的请求是幂等的；
-
+  
   Leader如果上一个Term日志已复制过半，则Client可以读取到最新的数据；
 
 * 日志复制未过半时，Leader宕机，然后重新选举新Leader
-
+  
   Client认为写入失败，超时需要重新发送写入请求，且要求会话中的请求是幂等的；
-
+  
   Leader上一个Term的日志未复制过半，Client不会读取到上一个Term最新数据，知道当前Term有一条日志被复制过半（”已提交“）；
-
-
 
 # 5. 集群成员变更（集群配置共识）
 
 待补充。。。
-
-
 
 # 6. Raft性能
 
@@ -336,8 +321,6 @@ Client在发起写入后，可能会出现以下的情况：
 
 Raft Group
 
-
-
 # 7.参考资料
 
 [1]. https://cloud.tencent.com/developer/article/1185189 Raft 读操作
@@ -347,12 +330,3 @@ Raft Group
 [3]. CONSENSUS-BRIDGING THEORY AND PRACTICE， Raft作者博士论文
 
 [4]. In Search of an Understandable Consensus Algorithm，Raft论文简化版
-
-
-
-
-
-
-
-
-
