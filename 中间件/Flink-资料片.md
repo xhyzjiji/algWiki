@@ -54,7 +54,7 @@
 
       2. 当Transformation Operator从某个input channel收到Barrier后，它会立刻Block住这条通道，<font color='red'>直到所有的input channel都收到Barrier</font>（这一过程叫对齐），此时该Operator就会记录自身状态，并向自己的所有output channel广播Barrier。
 
-         ![Flink_ABS](/Users/panyongfeng/Documents/basic_framework/wiki/中间件/pics/Flink_ABS.png)
+         ![Flink_ABS](./pics/Flink_ABS.png)
 
       3. Sink接受Barrier的操作流程与Transformation Oper一样。当所有的Barrier都到达Sink之后，并且所有的Sink也完成了Checkpoint，这一轮Snapshot就完成了。
 
@@ -68,7 +68,7 @@
       >
       > 4. 对于DAG图，快照算法比较容易理解，不过Asynchronous Barrier Snapshotting同样适用于DCG图（有环）。
       >
-      >    ![Flink_ABS_DCG](/Users/panyongfeng/Documents/basic_framework/wiki/中间件/pics/Flink_ABS_DCG.png)
+      >    ![Flink_ABS_DCG](./pics/Flink_ABS_DCG.png)
       >
       >    **算法过程：**
       >
@@ -76,7 +76,7 @@
       >
       >    2. 在保存快照到回环入边的Barrier到达，这段期间，需要保存回环入边的所有输入数据（各个回环入边单独存储），并在恢复时，重放这些数据进入算子参与计算。
       >
-      >       <img src="/Users/panyongfeng/Documents/basic_framework/wiki/中间件/pics/Flink_ABS_DCG_Example.png" alt="Flink_ABS_DCG_Example" style="zoom:50%;" />
+      >       <img src="./pics/Flink_ABS_DCG_Example.png" alt="Flink_ABS_DCG_Example" style="zoom:50%;" />
 
 2. WaterMark和窗口生命周期
 
